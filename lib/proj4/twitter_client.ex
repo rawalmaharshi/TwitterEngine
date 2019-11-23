@@ -1,4 +1,4 @@
-def module Proj4.TwitterClient do
+defmodule Proj4.TwitterClient do
     use GenServer
     @me __MODULE__
 
@@ -21,9 +21,10 @@ def module Proj4.TwitterClient do
         # Here the user recieves the tweet from the server process and outputs it onto the screen
     end
 
-    def handle_cast({:send_tweet}) do
+    def handle_cast({:send_tweet, _message}, _state) do
         # Here the user sends a tweet request to the server process, server will store its tweet in its table
         # Then the server process will look for this user's subscriber's list; and send another request to all its subsribers to retweet {Those subsribers will actually recieve a tweet first}
+
     end
 
 end

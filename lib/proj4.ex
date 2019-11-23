@@ -1,18 +1,11 @@
 defmodule Proj4 do
-  @moduledoc """
-  Documentation for Proj4.
-  """
+  
+  def main(args \\ []) do
+    startProject(args)
+  end
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Proj4.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def startProject(args) do
+    [num_users, num_msg] = args
+    Application.start(:normal, {num_users, num_msg})
   end
 end

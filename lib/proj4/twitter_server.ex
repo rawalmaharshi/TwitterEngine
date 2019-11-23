@@ -1,9 +1,9 @@
-def module Proj4.TwitterServer do
+defmodule Proj4.TwitterServer do
     use GenServer
     @me __MODULE__
 
     def start_link(arg) do
-        create_tables
+        create_tables()
         GenServer.start_link(@me, arg, name: @me)
     end
 
@@ -21,26 +21,30 @@ def module Proj4.TwitterServer do
     def handle_call({:register}, _from, state) do
         # Add the user in the user table which is stored in the server process
         #The other parameters to add to the user table would be given in the request
+        username = "hello"
+        password = "world"
         {:reply, add_newuser(username, password), state}
     end
 
     def handle_call({:login, username, password}, _from, state) do
         #session_Id = :crypto.hash(:sha256, username.to) |> Base.encode16
-        {:reply, authenticate(username, password,), state}
+
+        {:reply, authenticate(username, password), state}
     end
 
-    def handle_call({:logout, username}, _from, state) do
-        {:reply, logout(username), state}        
+    def handle_call({:logout, _username}, _from, state) do
+        {:reply, "logout(username)", state}        
     end
 
-    def logout(username) do
-        cond :ets.lookup(:user, username) do
-        [{u, p, s1, s2, t, state}] ->
-            :ets.insert(:user, {u, p, s1, s2, t, false})
-            {:ok, "Logged out successfully!!" }
-        [] ->
-            {:error, "user not registered"}
-    end
+    # def logout(username) do
+    #     cond :ets.lookup(:user, username) do
+    #     [{u, p, s1, s2, t, state}] ->
+    #         :ets.insert(:user, {u, p, s1, s2, t, false})
+    #         {:ok, "Logged out successfully!!" }
+    #     [] ->
+    #         {:error, "user not registered"}
+    #     end
+    # end
     #work from here
     def handle_cast({:send_tweet, username, tweet}, state) do
         #Add the tweets by the user in the tweets table that looks like
@@ -78,25 +82,23 @@ def module Proj4.TwitterServer do
         end
         {:noreply, state}#maharshi tell me what to return on this line.
     end       
-######################################################################################################
-   
 
     def handle_call({:subscribe}, _from, state) do
         #In the table of the user, add two entries: 
         # Subscriber: the user which is subscribed, append the subscribing user
         # subscribed: the user which is subscribing, add the subscribed user
 
-        {:reply, new_state}
+        {:reply, state, state}
     end
 
 
 
-    def handle_call({:retweet}, _from, state) do
+    def handle_cast({:retweet}, _from, state) do
         # No change in the tables 
         # Look for the subscriber table, send a request to all subscribers asking them to :retweet
         # The user also is a subscriber in someone else's table hence, he would also get a retweeet option before he sends a retweet option to other users
 
-        {:reply, state}
+        {:reply, state, state}
     end
 
     def add_newuser(userName, password) do        
@@ -119,7 +121,7 @@ def module Proj4.TwitterServer do
         case :ets.lookup(:user, username) do
             [{username, p, s1 , s2, t, onlinestatus}] -> 
                 if onlinestatus == false do
-                    if pass = password do
+                    if _pass = password do
                         :ets.insert(:user, {username, p, s1 , s2, t, true})
                         {:ok, "Logged in successfully!!"}    
                     else
