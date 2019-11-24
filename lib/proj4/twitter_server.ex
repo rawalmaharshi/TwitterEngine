@@ -19,30 +19,30 @@ defmodule Proj4.TwitterServer do
     def handle_call({:register}, _from, state) do
         # Add the user in the user table which is stored in the server process
         #The other parameters to add to the user table would be given in the request
-        username = "hello"
+        username = "hello@user"
         password = "world"
         {:reply, add_newuser(username, password), state}
     end
 
     def handle_call({:login, username, password}, _from, state) do
         #session_Id = :crypto.hash(:sha256, username.to) |> Base.encode16
-
         {:reply, authenticate(username, password), state}
     end
 
-    def handle_call({:logout, _username}, _from, state) do
-        {:reply, "logout(username)", state}        
+    def handle_call({:logout, username}, _from, state) do
+        {:reply, logout(username), state}        
     end
 
-    # def logout(username) do
-    #     cond :ets.lookup(:user, username) do
-    #     [{u, p, s1, s2, t, state}] ->
-    #         :ets.insert(:user, {u, p, s1, s2, t, false})
-    #         {:ok, "Logged out successfully!!" }
-    #     [] ->
-    #         {:error, "user not registered"}
-    #     end
-    # end
+    def logout(username) do
+        case :ets.lookup(:user, username) do
+        [{u, p, s1, s2, t, state}] ->
+            :ets.insert(:user, {u, p, s1, s2, t, false})
+            {:ok, "Logged out successfully!!"}
+        [] ->
+            {:error, "user not registered"}
+        end
+    end
+
     #work from here
     def handle_cast({:send_tweet, username, tweet}, state) do
         #Add the tweets by the user in the tweets table that looks like
@@ -94,7 +94,7 @@ defmodule Proj4.TwitterServer do
                     case :ets.lookup(:user, subscribed_to) do
                         [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
                             :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[subscribed_to | subscribed_list], tweets_list , onlinestatus})
-                            :ets.insert(:user, {subscriber_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
+                            :ets.insert(:user, {subscribed_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
                             {:ok, "#{subscriber} have successfully subscribed to #{subscribed_to}"}
                         [] ->
                             {:error , " #{subscribed_to} doesn't exist. Sorry"}
@@ -107,7 +107,7 @@ defmodule Proj4.TwitterServer do
         end
     end
 
-    def handle_call({:unsubscribe}, _from, state) do
+    def handle_call({:unsubscribe,subscriber, subscribed_to}, _from, state) do
         {:reply, unsubscribe(subscriber, subscribed_to), state}
     end
 
