@@ -162,11 +162,11 @@ defmodule Proj4.TwitterServer do
         case :ets.lookup(:user, username) do
             [{username, p, s1 , s2, t, onlinestatus}] -> 
                 if onlinestatus == false do
-                    if _pass = password do
+                    if p == password do
                         :ets.insert(:user, {username, p, s1 , s2, t, true})
                         {:ok, "Logged in successfully!!"}    
                     else
-                        {:error, "You have entered a wron password. Try again."}                       
+                        {:error, "You have entered a wrong password. Try again."}                       
                     end
                 else
                     {:error, "You are already logged in"}
