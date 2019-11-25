@@ -6,16 +6,23 @@ defmodule Proj4.Application do
   use Application
 
   def start(_type, _args) do
-    children = [
-      # Starts a worker by calling: Proj4.Worker.start_link(arg)
-      # {Proj4.Worker, arg}
-    ]
 
-    # # See https://hexdocs.pm/elixir/Supervisor.html
-    # # for other strategies and supported options
+    numUsers = String.to_integer(Enum.at(System.argv(),0), 10)
+    _numTweets = String.to_integer(Enum.at(System.argv(),1), 10)
+
+    if numUsers <= 1 do
+      IO.puts "Please enter the number of users greater than 1"
+      System.halt(0)
+    end
+
+    twitter_server = Supervisor.child_spec({Proj4.TwitterServer, []}, restart: :transient)
+    twitter_client = Enum.reduce(1..numUsers, [], fn x, acc -> 
+      currentNode = "user#{x}"
+    [Supervisor.child_spec({Proj4.TwitterClient, [%{name: currentNode}, x]}, id: {Proj4.TwitterClient, x}, restart: :temporary) | acc]
+    end)
+
+    children = [twitter_server | twitter_client]
     opts = [strategy: :one_for_one, name: Proj4.Supervisor]
-    # Supervisor.start_link(children, opts)
-
     Supervisor.start_link(children, opts);
   end
 end
