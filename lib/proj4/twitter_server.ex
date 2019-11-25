@@ -8,6 +8,8 @@ defmodule Proj4.TwitterServer do
     end
 
     def init(init_state) do
+        pid = self()
+        init_state = Map.put_new(init_state, :server_pid, pid)
         {:ok, init_state}
     end
 
@@ -138,7 +140,7 @@ defmodule Proj4.TwitterServer do
                     {:error , "you have to login first to subscribe."}
                 end
             [] ->
-                {:error , "thier is no subscriber exist  by #{subscriber} name. Request denied"}
+                {:error , "no subscriber exists  by #{subscriber} name. Request denied"}
         end
     end
 
@@ -222,6 +224,10 @@ defmodule Proj4.TwitterServer do
         {:reply, state, state}
     end
 
+    def handle_call({:get}, _from, current_state) do
+        {:reply, current_state, current_state}
+    end
+
     def add_newuser(userName, password) do        
         if checkuser(userName) do
             {:error, "This user is already exist. Try another username"}
@@ -261,4 +267,8 @@ defmodule Proj4.TwitterServer do
             [] -> {:error, "Register first to send the tweets"}
         end        
     end  
+
+    def getServerState() do
+        GenServer.call(@me, {:get})
+    end
 end
