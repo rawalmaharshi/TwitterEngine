@@ -16,11 +16,11 @@ defmodule Proj4.TwitterServer do
         :ets.new(:hashtags, [:set, :public, :named_table]) # tag, tweets
     end
 
-    def handle_call({:register}, _from, state) do
+    def handle_call({:register, username , password}, _from, state) do
         # Add the user in the user table which is stored in the server process
         #The other parameters to add to the user table would be given in the request
-        username = "hello@user"
-        password = "world"
+        # username = "hello@user"
+        # password = "world"
         {:reply, add_newuser(username, password), state}
     end
 
@@ -35,9 +35,13 @@ defmodule Proj4.TwitterServer do
 
     def logout(username) do
         case :ets.lookup(:user, username) do
-        [{u, p, s1, s2, t, state}] ->
-            :ets.insert(:user, {u, p, s1, s2, t, false})
-            {:ok, "Logged out successfully!!"}
+        [{u, p, s1, s2, t,  onlinestatus}] ->
+            if onlinestatus do
+                :ets.insert(:user, {u, p, s1, s2, t, false})
+                {:ok, "Logged out successfully!!"}
+            else
+                {:error , "!!!!you are not logged in.!!!!"}
+            end
         [] ->
             {:error, "user not registered"}
         end
@@ -107,21 +111,35 @@ defmodule Proj4.TwitterServer do
         end
     end
 
-    def handle_call({:unsubscribe,subscriber, subscribed_to}, _from, state) do
-        {:reply, unsubscribe(subscriber, subscribed_to), state}
+    def handle_call({:unsubscribe, unsubscriber, subscribed_to}, _from, state) do
+        {:reply, unsubscribe( unsubscriber, subscribed_to), state}
     end
 
+    def handle_call({:get_tweets,username},_from,state) do
+        [{_, _, _, following_list ,_ , _}] = :ets.lookup(:user, username)
+         temp = Enum.reduce( following_list,[], fn x, acc -> 
+                acc=[get_tweets(x)| acc]
+                acc
+                end)
+        {:reply ,temp , state}
+    end
 
-    def unsubscribe( subscriber, subscribed_to) do
-        case :ets.lookup(:user, subscriber) do
-            [{subscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
+    def get_tweets(username) do
+        case :ets.lookup(:user,username) do
+            [{_, _, _, _ , tweet_list , _}] -> tweet_list
+            [] -> []
+        end
+    end
+
+    def unsubscribe( unsubscriber, subscribed_to) do
+        case :ets.lookup(:user, unsubscriber) do
+            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
                         [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
-                            # :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[subscribed_to | subscribed_list], tweets_list , onlinestatus})
-                            # :ets.insert(:user, {subscriber_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
-                            # {:ok, "#{subscriber} have successfully subscribed to #{subscribed_to}"}
-                            {:ok, "incomplete code rn"}
+                            :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus})
+                            :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2})
+                            {:ok, "#{unsubscriber} have successfully unsubscribed to #{subscribed_to}"}
                             
                         [] ->
                             {:error , " #{subscribed_to} doesn't exist. Sorry"}
@@ -130,7 +148,7 @@ defmodule Proj4.TwitterServer do
                     {:error , "you have to login first to subscribe."}
                 end
             [] ->
-                {:error , "thier is no subscriber exist  by #{subscriber} name. Request denied"}
+                {:error , "thier is no subscriber exist  by #{unsubscriber} name. Request denied"}
         end
     end
     
