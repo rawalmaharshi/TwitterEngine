@@ -38,11 +38,11 @@ defmodule Proj4.TwitterClient do
     end
 
     def subscribe_to_user(user1, user2, server_pid) do
-        GenServer.call(server_pid, {:subscribe, user1, user2})
+        GenServer.call(server_pid, {:subscribe_user, user1, user2})
     end
 
     def unsubscribe_from_user(user1, user2, server_pid) do
-        GenServer.call(server_pid, {:unsubscribe, user1, user2})
+        GenServer.call(server_pid, {:unsubscribe_user, user1, user2})
     end
 
 end
