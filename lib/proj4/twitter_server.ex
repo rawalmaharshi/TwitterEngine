@@ -215,6 +215,26 @@ defmodule Proj4.TwitterServer do
                 {:error , "thier is no subscriber exist  by #{unsubscriber} name. Request denied"}
         end
     end
+
+    def unsubscribe_hashtag( unsubscriber, hashtag) do
+        case :ets.lookup(:user, unsubscriber) do
+            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
+                if(onlinestatus == true) do
+                    case :ets.lookup(:hashtags, hashtag) do
+                        [{hashtag, tweets_list2}] ->
+                            :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,hashtag), tweets_list , onlinestatus})
+                            {:ok, "#{unsubscriber} have successfully unsubscribed to #{hashtag}"}
+                            
+                        [] ->
+                            {:error , " #{hashtag} doesn't exist. Sorry"}
+                    end
+                else
+                    {:error , "you have to login first to subscribe."}
+                end
+            [] ->
+                {:error , "thier is no subscriber exist  by #{unsubscriber} name. Request denied"}
+        end
+    end
     
     def handle_call({:retweet}, _from, state) do
         # No change in the tables 
