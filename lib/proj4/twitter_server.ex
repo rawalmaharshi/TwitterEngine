@@ -18,6 +18,14 @@ defmodule Proj4.TwitterServer do
         :ets.new(:hashtags, [:set, :public, :named_table]) # tag, tweets
     end
 
+    def handle_cast({:add_node_name_to_global_list, pid}, state) do
+        # IO.inspect state
+        
+        IO.inspect state = Map.put(state, :client_processes, pid)
+        # state = Map.put(state, :hashedMapPID, mapPID)
+        {:noreply, state}
+    end
+
     def handle_call({:register, username , password}, _from, state) do
         # Add the user in the user table which is stored in the server process
         #The other parameters to add to the user table would be given in the request

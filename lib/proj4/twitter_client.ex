@@ -7,7 +7,11 @@ defmodule Proj4.TwitterClient do
     end
 
     def init(init_state) do
-        {:ok, init_state}
+        pid = self()
+        init_state
+        currentState = Map.put_new(init_state, :pid, pid)
+        GenServer.cast(Proj4.TwitterServer, {:add_node_name_to_global_list, pid})
+        {:ok, currentState}
     end
 
     def terminate(_reason, state) do
