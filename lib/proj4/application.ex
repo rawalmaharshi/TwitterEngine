@@ -15,7 +15,7 @@ defmodule Proj4.Application do
     #   System.halt(0)
     # end
 
-    twitter_server = Supervisor.child_spec({Proj4.TwitterServer, %{}}, restart: :transient)
+    twitter_server = Supervisor.child_spec({Proj4.TwitterServer, %{clientProcesses: %{} }}, restart: :transient)
     twitter_client = Enum.reduce(1..numUsers, [], fn x, acc -> 
       currentNode = "#{x}@user"
     [Supervisor.child_spec({Proj4.TwitterClient, %{name: currentNode}}, id: {Proj4.TwitterClient, x}, restart: :temporary) | acc]

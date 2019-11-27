@@ -8,9 +8,9 @@ defmodule Proj4.TwitterClient do
 
     def init(init_state) do
         pid = self()
-        init_state
+        {_ , name} = Map.fetch(init_state, :name)
         currentState = Map.put_new(init_state, :pid, pid)
-        GenServer.cast(Proj4.TwitterServer, {:add_node_name_to_global_list, pid})
+        GenServer.cast(Proj4.TwitterServer, {:add_node_name_to_global_list, pid, name})
         {:ok, currentState}
     end
 

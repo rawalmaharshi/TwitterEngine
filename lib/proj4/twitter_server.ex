@@ -16,10 +16,11 @@ defmodule Proj4.TwitterServer do
         :ets.new(:hashtags, [:set, :public, :named_table]) # tag, tweets
     end
 
-    def handle_cast({:add_node_name_to_global_list, pid}, state) do
-        # IO.inspect state
-        
-        IO.inspect state = Map.put(state, :client_processes, pid)
+    def handle_cast({:add_node_name_to_global_list, pid, name}, state) do
+        {_ ,temp} = Map.fetch(state , :clientProcesses)
+        IO.inspect state
+        temp = Map.put(temp , name , pid)
+        state = Map.put(state , :clientProcesses, temp)
         # state = Map.put(state, :hashedMapPID, mapPID)
         {:noreply, state}
     end
