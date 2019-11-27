@@ -8,8 +8,6 @@ defmodule Proj4.TwitterServer do
     end
 
     def init(init_state) do
-        pid = self()
-        init_state = Map.put_new(init_state, :server_pid, pid)
         {:ok, init_state}
     end
 
@@ -27,7 +25,6 @@ defmodule Proj4.TwitterServer do
     end
 
     def handle_call({:login, username, password}, _from, state) do
-        #session_Id = :crypto.hash(:sha256, username.to) |> Base.encode16
         {:reply, authenticate(username, password), state}
     end
 
@@ -49,6 +46,35 @@ defmodule Proj4.TwitterServer do
         end
     end
 
+    def handle_call({:delete_account, username, password}, _from ,state) do
+        {:reply, delete_account(username,password),state}
+    end
+    
+    def delete_account(username,p) do
+        case :ets.lookup(:user, username) do
+            [{username, password, _ , following_list, _ , onlinestatus}] -> 
+                if onlinestatus == true do
+                    if password == p do
+                        Enum.each(following_list, fn(x) -> 
+                            unsubscribe_user(username, x)
+                        end)
+                        [{_ , _, followers_list , _, _, _}] = :ets.lookup(:user, username)
+                        Enum.each(followers_list, fn(x) -> 
+                            unsubscribe_user(x, username)
+                        end)
+                        :ets.delete(:user, username)
+                        {:ok, "!!!!!!!!Account has been deleted successfully!!!!!!!. We will miss you"}
+                    else
+                        {:error, "You have entered a wrong password. Try again."}                       
+                    end
+                else
+                    {:error, "You are logged out. please login first"}
+                end                
+            [] -> {:error, "Invalid user.User is not registered"}
+        end
+    end
+
+
     #work from here
     def handle_cast({:send_tweet, username, tweet}, state) do
         #Add the tweets by the user in the tweets table that looks like
@@ -58,13 +84,17 @@ defmodule Proj4.TwitterServer do
                 if status do
                     #adding the tweet on the tweeter handle of the user
                     [{username, password , subscriber , subscribing , tweets_list, onlinestatus}] = :ets.lookup(:user, username)
-                    :ets.insert(:user, {username, password , subscriber , subscribing ,[tweet | tweets_list] , onlinestatus})
+                    if !Enum.member?(tweets_list, tweet) do
+                        :ets.insert(:user, {username, password , subscriber , subscribing ,[tweet | tweets_list] , onlinestatus})
+                    end
                     #adding the hastags in the hashtable
                     allhashtags = Regex.scan(~r/#[á-úÁ-Úä-üÄ-Üa-zA-Z0-9_]+/, tweet)
                     Enum.each( allhashtags, fn([x]) ->
                         case :ets.lookup(:hashtags, x) do
-                            [{x, tweets_list}] ->                
-                                :ets.insert(:hashtags, {x, [tweet | tweets_list]})
+                            [{x, tweets_list}] ->
+                                if !Enum.member?(tweets_list, tweet) do                
+                                    :ets.insert(:hashtags, {x, [tweet | tweets_list]})
+                                end
                             [] -> 
                                 :ets.insert_new(:hashtags, {x, [tweet]})
                         end
@@ -73,8 +103,10 @@ defmodule Proj4.TwitterServer do
                     allusernames=  Regex.scan(~r/[á-úÁ-Úä-üÄ-Üa-zA-Z0-9@._]+@user+/, tweet)
                     Enum.each(allusernames, fn([x]) ->
                         case :ets.lookup(:user, x) do
-                            [{x, password2 , subscriber2 , subscribing2 , tweets_list2, onlinestatus2}] ->                
-                                :ets.insert(:user, {x,  password2 , subscriber2 , subscribing2 ,[tweet | tweets_list2], onlinestatus2})
+                            [{x, password2 , subscriber2 , subscribing2 , tweets_list2, onlinestatus2}] ->
+                                if !Enum.member?(tweets_list, tweet) do                
+                                    :ets.insert(:user, {x,  password2 , subscriber2 , subscribing2 ,[tweet | tweets_list2], onlinestatus2})
+                                end
                             [] -> 
                                 IO.puts "User #{x} doesn't exist. !!!!!You can't tag this user!!!"
                         end
@@ -111,8 +143,12 @@ defmodule Proj4.TwitterServer do
                 if(onlinestatus == true) do
                     case :ets.lookup(:hashtags, hashtag) do
                         [{hashtag, tweets_list2}] ->
-                            :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[hashtag | subscribed_list], tweets_list , onlinestatus})
-                            {:ok, "#{subscriber} have successfully subscribed to #{hashtag}"}
+                            if !Enum.member?(tweets_list2, hashtag) do 
+                                :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[hashtag | subscribed_list], tweets_list , onlinestatus})
+                                {:ok, "#{subscriber} have successfully subscribed to #{hashtag}"}
+                            else
+                                {:error, "#{subscriber} already subscribed to #{hashtag}"}
+                            end
                         [] ->
                             {:error , "#{hashtag} doesn't exist. Sorry"}
                     end
@@ -130,9 +166,13 @@ defmodule Proj4.TwitterServer do
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
                         [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
-                            :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[subscribed_to | subscribed_list], tweets_list , onlinestatus})
-                            :ets.insert(:user, {subscribed_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
-                            {:ok, "#{subscriber} have successfully subscribed to #{subscribed_to}"}
+                            if !Enum.member?(subscribed_list, subscribed_to) do
+                                :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[subscribed_to | subscribed_list], tweets_list , onlinestatus})
+                                :ets.insert(:user, {subscribed_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
+                                {:ok, "#{subscriber} have successfully subscribed to #{subscribed_to}"}
+                            else
+                                {:error, "#{subscriber} already subscribed to #{subscribed_to}"}
+                            end
                         [] ->
                             {:error , " #{subscribed_to} doesn't exist. Sorry"}
                     end
@@ -140,7 +180,7 @@ defmodule Proj4.TwitterServer do
                     {:error , "you have to login first to subscribe."}
                 end
             [] ->
-                {:error , "no subscriber exists  by #{subscriber} name. Request denied"}
+                {:error , "thier is no subscriber exist  by #{subscriber} name. Request denied"}
         end
     end
 
@@ -153,7 +193,7 @@ defmodule Proj4.TwitterServer do
                 [ get_tweets(x) | acc] 
             end
         end)
-        temp = List.flatten(temp)  |> Enum.uniq
+        temp = List.flatten(temp) |> Enum.uniq
         {:reply ,temp , state}
     end
 
@@ -181,10 +221,13 @@ defmodule Proj4.TwitterServer do
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
                         [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
-                            :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus})
-                            :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2})
-                            {:ok, "#{unsubscriber} have successfully unsubscribed to #{subscribed_to}"}
-                            
+                            if Enum.member?(subscribed_list, subscribed_to) do
+                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus})
+                                :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2})
+                                {:ok, "#{unsubscriber} have successfully unsubscribed to #{subscribed_to}"}
+                            else
+                                {:error, "#{unsubscriber} already unsubscribed to #{subscribed_to}"}
+                            end                            
                         [] ->
                             {:error , " #{subscribed_to} doesn't exist. Sorry"}
                     end
@@ -202,9 +245,12 @@ defmodule Proj4.TwitterServer do
                 if(onlinestatus == true) do
                     case :ets.lookup(:hashtags, hashtag) do
                         [{hashtag, tweets_list2}] ->
-                            :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,hashtag), tweets_list , onlinestatus})
-                            {:ok, "#{unsubscriber} have successfully unsubscribed to #{hashtag}"}
-                            
+                            if Enum.member?(subscribed_list, hashtag) do
+                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,hashtag), tweets_list , onlinestatus})
+                                {:ok, "#{unsubscriber} have successfully unsubscribed to #{hashtag}"}
+                            else
+                                {:error, "#{unsubscriber} already unsubscribed to #{hashtag}"}
+                            end
                         [] ->
                             {:error , " #{hashtag} doesn't exist. Sorry"}
                     end
@@ -222,10 +268,6 @@ defmodule Proj4.TwitterServer do
         # The user also is a subscriber in someone else's table hence, he would also get a retweeet option before he sends a retweet option to other users
 
         {:reply, state, state}
-    end
-
-    def handle_call({:get}, _from, current_state) do
-        {:reply, current_state, current_state}
     end
 
     def add_newuser(userName, password) do        
@@ -267,8 +309,4 @@ defmodule Proj4.TwitterServer do
             [] -> {:error, "Register first to send the tweets"}
         end        
     end  
-
-    def getServerState() do
-        GenServer.call(@me, {:get})
-    end
 end
