@@ -45,7 +45,7 @@ defmodule Proj4.TwitterServer do
                 {:error , "!!!!you are not logged in.!!!!"}
             end
         [] ->
-            {:error, "user not registered"}
+            {:error, "User not registered"}
         end
     end
 
@@ -103,13 +103,13 @@ defmodule Proj4.TwitterServer do
                             :ets.insert(:user, {subscribed_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
                             {:ok, "#{subscriber} have successfully subscribed to #{subscribed_to}"}
                         [] ->
-                            {:error , " #{subscribed_to} doesn't exist. Sorry"}
+                            {:error , "User #{subscribed_to} doesn't exist."}
                     end
                 else
-                    {:error , "you have to login first to subscribe."}
+                    {:error , "You have to login first to subscribe."}
                 end
             [] ->
-                {:error , "no subscriber exists  by #{subscriber} name. Request denied"}
+                {:error , "No subscriber exists  by #{subscriber} name. Request denied"}
         end
     end
 
@@ -141,16 +141,16 @@ defmodule Proj4.TwitterServer do
                         [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
                             :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus})
                             :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2})
-                            {:ok, "#{unsubscriber} have successfully unsubscribed to #{subscribed_to}"}
+                            {:ok, "#{unsubscriber} have successfully unsubscribed from #{subscribed_to}"}
                             
                         [] ->
-                            {:error , " #{subscribed_to} doesn't exist. Sorry"}
+                            {:error , "#{subscribed_to} doesn't exist."}
                     end
                 else
-                    {:error , "you have to login first to subscribe."}
+                    {:error , "You have to login first to subscribe."}
                 end
             [] ->
-                {:error , "thier is no subscriber exist  by #{unsubscriber} name. Request denied"}
+                {:error , "No subscriber exists  by #{unsubscriber} name."}
         end
     end
     
@@ -168,10 +168,10 @@ defmodule Proj4.TwitterServer do
 
     def add_newuser(userName, password) do        
         if checkuser(userName) do
-            {:error, "This user is already exist. Try another username"}
+            {:error, "This user already exists. Try another username."}
         else
             :ets.insert_new(:user, {userName, password, [], [], [], false})
-            {:ok, "new user #{userName} successfully added "}
+            {:ok, "New user #{userName} successfully added"}
         end
     end
 
@@ -190,7 +190,7 @@ defmodule Proj4.TwitterServer do
                         :ets.insert(:user, {username, p, s1 , s2, t, true})
                         {:ok, "Logged in successfully!!"}    
                     else
-                        {:error, "You have entered a wrong password. Try again."}                       
+                        {:error, "You have entered a wrong password. Try again!"}                       
                     end
                 else
                     {:error, "You are already logged in"}
