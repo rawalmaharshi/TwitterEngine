@@ -7,13 +7,13 @@ defmodule Proj4.Application do
 
   def start(_type, _args) do
 
-    numUsers = String.to_integer(Enum.at(System.argv(),0), 10)
-    _numTweets = String.to_integer(Enum.at(System.argv(),1), 10)
-
-    if numUsers <= 1 do
-      IO.puts "Please enter the number of users greater than 1"
-      System.halt(0)
-    end
+    # numUsers = String.to_integer(Enum.at(System.argv(),0), 10)
+    # _numTweets = String.to_integer(Enum.at(System.argv(),1), 10)
+    numUsers = 10
+    # if numUsers <= 1 do
+    #   IO.puts "Please enter the number of users greater than 1"
+    #   System.halt(0)
+    # end
 
     twitter_server = Supervisor.child_spec({Proj4.TwitterServer, %{}}, restart: :transient)
     twitter_client = Enum.reduce(1..numUsers, [], fn x, acc -> 
@@ -32,10 +32,10 @@ defmodule Proj4.Application do
     # Register user
     # IO.inspect Proj4.TwitterClient.register_user("maharshi", "hello", server_pid)
 
-    #Login user
+    # #Login user
     # IO.inspect Proj4.TwitterClient.login_user("maharshi", "hello", server_pid)
 
-    
+
 
     {:ok, application_pid}
   end
