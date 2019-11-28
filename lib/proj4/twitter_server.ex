@@ -8,7 +8,9 @@ defmodule Proj4.TwitterServer do
     end
 
     def init(init_state) do
-        {:ok, init_state}
+        pid = self()
+        new_state = Map.put_new(init_state, :server_pid, pid)
+        {:ok, new_state}
     end
 
     def create_tables do
@@ -17,33 +19,31 @@ defmodule Proj4.TwitterServer do
     end
 
     def handle_cast({:add_node_name_to_global_list, pid, name}, state) do
-        {_ ,temp} = Map.fetch(state , :clientProcesses)
-        IO.inspect state
-        temp = Map.put(temp , name , pid)
-        state = Map.put(state , :clientProcesses, temp)
-        # state = Map.put(state, :hashedMapPID, mapPID)
+        {_ , clientProcesses} = Map.fetch(state , :clientProcesses)
+        clientProcesses = Map.put(clientProcesses , name , pid)
+        state = Map.put(state , :clientProcesses, clientProcesses)
         {:noreply, state}
     end
 
-    def handle_call({:register, username , password}, _from, state) do
+    def handle_call({:register, username , password, user_pid}, _from, state) do
         # Add the user in the user table which is stored in the server process
         #The other parameters to add to the user table would be given in the request
         # username = "hello@user"
         # password = "world"
-        {:reply, add_newuser(username, password), state}
+        {:reply, add_newuser(username, password, user_pid), state}
     end
 
-    def handle_call({:login, username, password}, _from, state) do
-        {:reply, authenticate(username, password), state}
+    def handle_call({:login, username, password, client_pid}, _from, state) do
+        {:reply, authenticate(username, password, client_pid), state}
     end
 
-    def handle_call({:logout, username}, _from, state) do
-        {:reply, logout(username), state}        
+    def handle_call({:logout, username, client_pid}, _from, state) do
+        {:reply, logout(username, client_pid), state}        
     end
 
-    def logout(username) do
+    def logout(username, _client_pid) do
         case :ets.lookup(:user, username) do
-        [{u, p, s1, s2, t,  onlinestatus}] ->
+        [{u, p, s1, s2, t,  onlinestatus, _pid}] ->
             if onlinestatus do
                 :ets.insert(:user, {u, p, s1, s2, t, false})
                 {:ok, "Logged out successfully!!"}
@@ -82,7 +82,6 @@ defmodule Proj4.TwitterServer do
             [] -> {:error, "Invalid user.User is not registered"}
         end
     end
-
 
     #work from here
     def handle_cast({:send_tweet, username, tweet}, state) do
@@ -127,11 +126,11 @@ defmodule Proj4.TwitterServer do
             {:error, message} ->
                 IO.puts(message)            
         end
-        {:noreply, state}#maharshi tell me what to return on this line.
+        {:noreply, state}
     end       
 
     def handle_call({:unsubscribe_user, unsubscriber, subscribed_to}, _from, state) do
-        {:reply, unsubscribe_user( unsubscriber, subscribed_to), state}
+        {:reply, unsubscribe_user(unsubscriber, subscribed_to), state}
     end
 
     def handle_call({:subscribe_user, subscriber, subscribed_to}, _from, state) do
@@ -144,6 +143,14 @@ defmodule Proj4.TwitterServer do
 
     def handle_call({:unsubscribe_hashtag, unsubscriber, hashtag}, _from, state) do
         {:reply, unsubscribe_hashtag(unsubscriber, hashtag), state}
+    end
+
+    def handle_call({:get}, _from, current_state) do
+        {:reply, current_state, current_state}
+    end
+
+    def getServerState() do
+        GenServer.call(@me, {:get})
     end
 
     def subscribe_hashtag( subscriber, hashtag) do
@@ -171,10 +178,10 @@ defmodule Proj4.TwitterServer do
 
     def subscribe_user( subscriber, subscribed_to) do
         case :ets.lookup(:user, subscriber) do
-            [{subscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
+            [{subscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus, _pid}] ->
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
-                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
+                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2, _pid}] ->
                             if !Enum.member?(subscribed_list, subscribed_to) do
                                 :ets.insert(:user, {subscriber,  password1 , subscribers_list ,[subscribed_to | subscribed_list], tweets_list , onlinestatus})
                                 :ets.insert(:user, {subscribed_to,  password2 ,[subscriber | subscribers_list2], subscribed_list2, tweets_list2 , onlinestatus2})
@@ -226,13 +233,13 @@ defmodule Proj4.TwitterServer do
 
     def unsubscribe_user( unsubscriber, subscribed_to) do
         case :ets.lookup(:user, unsubscriber) do
-            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
+            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus, _pid}] ->
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
-                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2}] ->
+                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2, pid}] ->
                             if Enum.member?(subscribed_list, subscribed_to) do
-                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus})
-                                :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2})
+                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus, pid})
+                                :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2, pid})
                                 {:ok, "#{unsubscriber} have successfully unsubscribed from #{subscribed_to}"}
                             else
                                 {:error, "#{unsubscriber} already unsubscribed from #{subscribed_to}"}
@@ -299,28 +306,28 @@ defmodule Proj4.TwitterServer do
         {:reply, state, state}
     end
 
-    def add_newuser(userName, password) do        
+    def add_newuser(userName, password, user_pid) do        
         if checkuser(userName) do
-            {:error, "This user already exists. Try another username."}
+            {:error, "This user already exists."}
         else
-            :ets.insert_new(:user, {userName, password, [], [], [], false})
+            :ets.insert_new(:user, {userName, password, [], [], [], false, user_pid})
             {:ok, "New user #{userName} successfully added"}
         end
     end
 
     def checkuser(username) do
         case :ets.lookup(:user, username) do
-            [{_, _, _, _, _, _}] -> true
+            [{_, _, _, _, _, _, _}] -> true
             [] -> false
         end
     end
 
-    def authenticate(username, password) do
+    def authenticate(username, password, client_pid) do
         case :ets.lookup(:user, username) do
-            [{username, p, s1 , s2, t, onlinestatus}] -> 
+            [{username, p, s1 , s2, t, onlinestatus, client_pid}] -> 
                 if onlinestatus == false do
                     if p == password do
-                        :ets.insert(:user, {username, p, s1 , s2, t, true})
+                        :ets.insert(:user, {username, p, s1 , s2, t, true, client_pid})
                         {:ok, "Logged in successfully!!"}    
                     else
                         {:error, "You have entered a wrong password. Try again!"}                       
@@ -334,8 +341,12 @@ defmodule Proj4.TwitterServer do
 
     def isLoggedin(username) do
         case :ets.lookup(:user, username) do
-            [{_, _, _, _, _, x}] -> {:ok, x}
+            [{_, _, _, _, _, x, _pid}] -> {:ok, x}
             [] -> {:error, "Register first to send the tweets"}
         end        
     end  
+
+    def get() do
+        GenServer.call(@me, {:get})
+    end
 end

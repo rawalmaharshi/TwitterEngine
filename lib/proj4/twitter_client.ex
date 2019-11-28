@@ -29,16 +29,16 @@ defmodule Proj4.TwitterClient do
 
     end
 
-    def register_user(username, password, server_pid) do 
-        GenServer.call(server_pid, {:register, username, password})
+    def register_user(username, password, client_pid, server_pid) do 
+        GenServer.call(Proj4.TwitterServer, {:register, username, password, client_pid})
     end
 
-    def login_user(username, password, server_pid) do
-        GenServer.call(server_pid, {:login, username, password})
+    def login_user(username, password, client_pid, server_pid) do
+        GenServer.call(server_pid, {:login, username, password, client_pid})
     end
 
-    def logout_user(username, server_pid) do
-        GenServer.call(server_pid, {:logout, username})
+    def logout_user(username, client_pid, server_pid) do
+        GenServer.call(server_pid, {:logout, username, client_pid})
     end
 
     def subscribe_to_user(user1, user2, server_pid) do
