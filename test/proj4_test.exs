@@ -86,6 +86,10 @@ defmodule Proj4Test do
     assert {:ok, "New user #{username} successfully added"} == Proj4.TwitterClient.register_user(username, password, client_pid, pid)
 
     assert {:ok, "Logged in successfully!!"} == Proj4.TwitterClient.login_user(username, password, client_pid, pid)
+
+    [{_, _, _, _, _, loginStatus, _}] = :ets.lookup(:user, username)
+
+    assert loginStatus == true
   end
 
   test "don't login when already logged in the system", %{server: pid} do
@@ -144,6 +148,10 @@ defmodule Proj4Test do
     Proj4.TwitterClient.login_user(username, password, client_pid, pid)
 
     assert {:ok, "Logged out successfully!!"} == Proj4.TwitterClient.logout_user(username, client_pid, pid)
+
+    [{_, _, _, _, _, loginStatus, _}] = :ets.lookup(:user, username)
+
+    assert loginStatus == false
   end
 
 
@@ -180,6 +188,10 @@ defmodule Proj4Test do
 
     #Sucessfully subscribe
     assert {:ok, "#{user1} have successfully subscribed to #{user2}"} == Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
+
+    #Look for entry in the table {Its get added to the subscribers column in the user table}
+    [{_user1, _, _user1Followers, user1Follows, _, _, _pid}] = :ets.lookup(:user, user1)
+    assert Enum.member?(user1Follows, user2) == true
   end
 
   test "Unsuccessful subscribe as other user doesn't exist", %{server: pid} do
@@ -225,10 +237,10 @@ defmodule Proj4Test do
     assert {:ok, "Logged in successfully!!"} == Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
 
     #Subscribe
-    Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
+    IO.inspect Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
 
     #Unsubscribe
-    assert {:ok, "#{user1} have successfully unsubscribed from #{user2}"} == Proj4.TwitterClient.unsubscribe_from_user(user1, user2, pid)
+    # assert {:ok, "#{user1} have successfully unsubscribed from #{user2}"} == Proj4.TwitterClient.unsubscribe_from_user(user1, user2, pid)
   end
 
   test "The user entered to unsubscribe is not registered", %{server: pid} do
