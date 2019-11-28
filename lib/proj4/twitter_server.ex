@@ -43,9 +43,9 @@ defmodule Proj4.TwitterServer do
 
     def logout(username, _client_pid) do
         case :ets.lookup(:user, username) do
-        [{u, p, s1, s2, t,  onlinestatus, _pid}] ->
+        [{u, p, s1, s2, t,  onlinestatus, pid}] ->
             if onlinestatus do
-                :ets.insert(:user, {u, p, s1, s2, t, false})
+                :ets.insert(:user, {u, p, s1, s2, t, false,pid})
                 {:ok, "Logged out successfully!!"}
             else
                 {:error , "!!!!you are not logged in.!!!!"}
@@ -233,13 +233,13 @@ defmodule Proj4.TwitterServer do
 
     def unsubscribe_user( unsubscriber, subscribed_to) do
         case :ets.lookup(:user, unsubscriber) do
-            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus, _pid}] ->
+            [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus, pid1}] ->
                 if(onlinestatus == true) do
                     case :ets.lookup(:user, subscribed_to) do
-                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2, pid}] ->
+                        [{subscribed_to, password2 , subscribers_list2 , subscribed_list2, tweets_list2 , onlinestatus2, pid2}] ->
                             if Enum.member?(subscribed_list, subscribed_to) do
-                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus, pid})
-                                :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2, pid})
+                                :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,subscribed_to), tweets_list , onlinestatus, pid1})
+                                :ets.insert(:user, {subscribed_to,  password2 ,List.delete(subscribers_list2, unsubscriber), subscribed_list2, tweets_list2 , onlinestatus2, pid2})
                                 {:ok, "#{unsubscriber} have successfully unsubscribed from #{subscribed_to}"}
                             else
                                 {:error, "#{unsubscriber} already unsubscribed from #{subscribed_to}"}
@@ -298,12 +298,8 @@ defmodule Proj4.TwitterServer do
         end
     end
     
-    def handle_call({:retweet}, _from, state) do
-        # No change in the tables 
-        # Look for the subscriber table, send a request to all subscribers asking them to :retweet
-        # The user also is a subscriber in someone else's table hence, he would also get a retweeet option before he sends a retweet option to other users
-
-        {:reply, state, state}
+    def handle_call({:retweet,user}, _from, state) do
+        {:reply, get_tweets(user) ,state}
     end
 
     def add_newuser(userName, password, user_pid) do        
