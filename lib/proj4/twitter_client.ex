@@ -43,6 +43,10 @@ defmodule Proj4.TwitterClient do
         GenServer.call(server_pid, {:unsubscribe_user, user1, user2})
     end
 
+    def delete_user(username, password, server_pid) do
+        GenServer.call(server_pid, {:delete_account, username, password})
+    end
+    
     def send_tweet(username, tweet, _client_pid, server_pid) do
         # Here the user sends a tweet request to the server process, server will store its tweet in its table
         # Then the server process will look for this user's subscriber's list; and send another request to all its subsribers to retweet {Those subsribers will actually recieve a tweet first}

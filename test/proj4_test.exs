@@ -157,10 +157,58 @@ defmodule Proj4Test do
 
   # # @doc """
   # # 4) Delete User Test
-  # #   i) No user with the user name
-  # #   ii) User not logged in
-  # #   iii) Successful log out
+  # #   i) If user exist then delete
+  # #   ii) else error user doesn't exist
   # # """
+
+  test "Successfully delete the account", %{server: pid} do
+    user1 = "mohit1"
+    pass1 = "garg1"
+    user2 = "mohit2"
+    pass2 = "garg2"
+    user3 = "mohit3"
+    pass3 = "garg3"
+
+    #start clients 
+    {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    {_, client_pid3} = GenServer.start_link(Proj4.TwitterClient, %{name: user3})
+
+
+    #Register first
+    Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
+    Proj4.TwitterClient.register_user(user2, pass2, client_pid2, pid)
+    Proj4.TwitterClient.register_user(user3, pass3, client_pid3, pid)
+
+    #Login first user
+    Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
+    Proj4.TwitterClient.login_user(user2, pass2, client_pid2, pid)
+    Proj4.TwitterClient.login_user(user3, pass3, client_pid3, pid)
+
+    #All three users are subscribing each other
+    Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
+    Proj4.TwitterClient.subscribe_to_user(user1, user3, pid)
+    Proj4.TwitterClient.subscribe_to_user(user2, user1, pid)
+    Proj4.TwitterClient.subscribe_to_user(user2, user3, pid)
+    Proj4.TwitterClient.subscribe_to_user(user3, user1, pid)
+    Proj4.TwitterClient.subscribe_to_user(user3, user2, pid)
+    
+    #deleting the account of the existing user
+     
+     assert {:ok, "!!!!!!!!Account has been deleted successfully!!!!!!!. We will miss you"} = Proj4.TwitterClient.delete_user(user1,pass1,pid)
+  end
+
+  test "Account doesn't exist", %{server: pid} do
+    user1 = "mohit"
+    pass1 = "garg"
+
+    #start clients 
+    {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    
+    #deleting the account of the existing user
+     
+     assert {:error, "Invalid user.User is not registered"} = Proj4.TwitterClient.delete_user(user1,pass1,pid)
+  end
 
   @doc """
   5) Subscribe User Test
