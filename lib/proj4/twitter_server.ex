@@ -26,10 +26,6 @@ defmodule Proj4.TwitterServer do
     end
 
     def handle_call({:register, username , password, user_pid}, _from, state) do
-        # Add the user in the user table which is stored in the server process
-        #The other parameters to add to the user table would be given in the request
-        # username = "hello@user"
-        # password = "world"
         {:reply, add_newuser(username, password, user_pid), state}
     end
 
@@ -79,11 +75,10 @@ defmodule Proj4.TwitterServer do
                 else
                     {:error, "You are logged out. please login first"}
                 end                
-            [] -> {:error, "Invalid user.User is not registered"}
+            [] -> {:error, "Invalid user. User is not registered"}
         end
     end
 
-    #work from here
     def handle_call({:send_tweet, username, tweet}, _from, state) do
         #Add the tweets by the user in the tweets table that looks like
         # UserName, ['hi', 'bye']    --> primary key is username(looked up using that), then there is a list of tweets
@@ -91,7 +86,6 @@ defmodule Proj4.TwitterServer do
     end       
 
     def send_tweet(username, tweet) do
-        message = 1
         case isLoggedin(username) do
             {:ok, status} ->
                 if status do
