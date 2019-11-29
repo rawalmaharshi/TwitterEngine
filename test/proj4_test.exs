@@ -22,6 +22,8 @@ defmodule Proj4Test do
 
     #Start user process
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
+
     assert {:ok, "New user #{username} successfully added"} == Proj4.TwitterClient.register_user(username, password, client_pid, pid)
 
     #check user added
@@ -35,6 +37,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    Process.sleep(1000)
 
     #Add first user
     assert {:ok, "New user #{user1} successfully added"} == Proj4.TwitterClient.register_user(user1, password, client_pid, pid)
@@ -57,6 +60,7 @@ defmodule Proj4Test do
 
     #start client process
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #user not registered error
     assert {:error, "User is not registered. Please register the user."} == Proj4.TwitterClient.login_user(username, password, client_pid, pid)
@@ -69,6 +73,7 @@ defmodule Proj4Test do
 
      #start client process
      {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+     Process.sleep(1000)
 
      assert {:ok, "New user #{username} successfully added"} == Proj4.TwitterClient.register_user(username, password, client_pid, pid)
 
@@ -82,6 +87,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     assert {:ok, "New user #{username} successfully added"} == Proj4.TwitterClient.register_user(username, password, client_pid, pid)
 
@@ -99,6 +105,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     assert {:ok, "New user #{username} successfully added"} == Proj4.TwitterClient.register_user(username, password, client_pid, pid)
 
@@ -118,6 +125,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     assert {:error, "User not registered"} == Proj4.TwitterClient.logout_user(username, client_pid, pid)
   end
@@ -128,6 +136,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     # Register First
     Proj4.TwitterClient.register_user(username, password, client_pid, pid)
@@ -142,6 +151,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #Register and login first
     Proj4.TwitterClient.register_user(username, password, client_pid, pid)
@@ -172,6 +182,7 @@ defmodule Proj4Test do
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
     {_, client_pid3} = GenServer.start_link(Proj4.TwitterClient, %{name: user3})
+    Process.sleep(1000)
 
 
     #Register first
@@ -203,6 +214,7 @@ defmodule Proj4Test do
 
     #start client
     GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
     
     #deleting the account of the existing user
      
@@ -224,6 +236,7 @@ defmodule Proj4Test do
     #start clients 
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -248,6 +261,7 @@ defmodule Proj4Test do
     #start clients 
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, _client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -274,6 +288,7 @@ defmodule Proj4Test do
     #start clients 
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -296,6 +311,7 @@ defmodule Proj4Test do
 
     #start client
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    Process.sleep(1000)
 
     #Register first user
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -316,6 +332,7 @@ defmodule Proj4Test do
     #start clients 
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -341,6 +358,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(username, password, client_pid, pid)
@@ -355,6 +373,7 @@ defmodule Proj4Test do
 
     #start client
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #Try to send tweet without registering
     assert {:error, "Register first to send the tweets"} == Proj4.TwitterClient.send_tweet(username, tweet, client_pid, pid)
@@ -367,6 +386,7 @@ defmodule Proj4Test do
 
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(username, password, client_pid, pid)
@@ -397,6 +417,7 @@ defmodule Proj4Test do
   
     #start client 
     {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(username, password, client_pid, pid)
@@ -426,6 +447,7 @@ defmodule Proj4Test do
     #start client 
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
@@ -465,6 +487,7 @@ defmodule Proj4Test do
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
     {_, client_pid3} = GenServer.start_link(Proj4.TwitterClient, %{name: user3})
+    Process.sleep(1000)
 
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)

@@ -3,12 +3,12 @@ defmodule Proj4.TwitterServer do
     @me __MODULE__
 
     def start_link(arg) do
-        create_tables()
         GenServer.start_link(@me, arg, name: @me)
     end
 
     def init(init_state) do
         pid = self()
+        create_tables()
         new_state = Map.put_new(init_state, :server_pid, pid)
         {:ok, new_state}
     end
@@ -37,7 +37,47 @@ defmodule Proj4.TwitterServer do
         {:reply, logout(username, client_pid), state}        
     end
 
-    def logout(username, client_pid) do
+    def handle_call({:delete_account, username, password}, _from ,state) do
+        {:reply, delete_account(username,password),state}
+    end
+
+    def handle_call({:send_tweet, username, tweet}, _from, state) do
+        {:reply, send_tweet(username, tweet), state}
+    end
+
+    def handle_call({:unsubscribe_user, unsubscriber, subscribed_to}, _from, state) do
+        {:reply, unsubscribe_user(unsubscriber, subscribed_to), state}
+    end
+
+    def handle_call({:subscribe_user, subscriber, subscribed_to}, _from, state) do
+        {:reply, subscribe_user(subscriber, subscribed_to), state}
+    end
+
+    def handle_call({:subscribe_hashtag, subscriber, hashtag}, _from, state) do
+        {:reply, subscribe_hashtag(subscriber, hashtag), state}
+    end
+
+    def handle_call({:unsubscribe_hashtag, unsubscriber, hashtag}, _from, state) do
+        {:reply, unsubscribe_hashtag(unsubscriber, hashtag), state}
+    end
+
+    def handle_call({:get}, _from, current_state) do
+        {:reply, current_state, current_state}
+    end
+
+    def handle_call({:get_tweets_for_user, username}, _from ,state) do   
+        {:reply ,get_tweets_for_user_wall(username) , state}
+    end
+
+    def handle_call({:get_user_tweets, username},_from,state) do
+        {:reply, get_tweets(username) ,state}
+    end
+
+    def handle_call({:retweet, user}, _from, state) do
+        {:reply, get_tweets(user) ,state}
+    end
+
+    def logout(username, _client_pid) do
         case :ets.lookup(:user, username) do
         [{u, p, s1, s2, t,  onlinestatus, client_pid}] ->
             if onlinestatus do
@@ -49,10 +89,6 @@ defmodule Proj4.TwitterServer do
         [] ->
             {:error, "User not registered"}
         end
-    end
-
-    def handle_call({:delete_account, username, password}, _from ,state) do
-        {:reply, delete_account(username,password),state}
     end
     
     def delete_account(username,p) do
@@ -77,12 +113,6 @@ defmodule Proj4.TwitterServer do
                 end                
             [] -> {:error, "Invalid user. User is not registered"}
         end
-    end
-
-    def handle_call({:send_tweet, username, tweet}, _from, state) do
-        #Add the tweets by the user in the tweets table that looks like
-        # UserName, ['hi', 'bye']    --> primary key is username(looked up using that), then there is a list of tweets
-        {:reply, send_tweet(username, tweet), state}
     end       
 
     def send_tweet(username, tweet) do
@@ -118,35 +148,15 @@ defmodule Proj4.TwitterServer do
                                 IO.puts "User #{x} doesn't exist. !!!!!You can't tag this user!!!"
                         end
                     end)
-                    # IO.puts ("Tweet sent!")
-                    message = {:ok, "Tweet sent!"}
+                    IO.puts ("Tweet sent by #{username}")
+                    _message = {:ok, "Tweet sent!"}
                 else
-                    # IO.puts "Please login first."
-                    message = {:error, "Please login first"}
+                    IO.puts "Please login first."
+                    _message = {:error, "Please login first"}
                 end
             {:error, message} ->
                 {:error, message}            
         end
-    end
-
-    def handle_call({:unsubscribe_user, unsubscriber, subscribed_to}, _from, state) do
-        {:reply, unsubscribe_user(unsubscriber, subscribed_to), state}
-    end
-
-    def handle_call({:subscribe_user, subscriber, subscribed_to}, _from, state) do
-        {:reply, subscribe_user(subscriber, subscribed_to), state}
-    end
-
-    def handle_call({:subscribe_hashtag, subscriber, hashtag}, _from, state) do
-        {:reply, subscribe_hashtag(subscriber, hashtag), state}
-    end
-
-    def handle_call({:unsubscribe_hashtag, unsubscriber, hashtag}, _from, state) do
-        {:reply, unsubscribe_hashtag(unsubscriber, hashtag), state}
-    end
-
-    def handle_call({:get}, _from, current_state) do
-        {:reply, current_state, current_state}
     end
 
     def getServerState() do
@@ -200,10 +210,6 @@ defmodule Proj4.TwitterServer do
         end
     end
 
-    def handle_call({:get_tweets_for_user, username}, _from ,state) do   
-        {:reply ,get_tweets_for_user_wall(username) , state}
-    end
-
     def get_tweets_for_user_wall(username) do
         [{_, _, _, following_list ,_ , _, _}] = :ets.lookup(:user, username)
          temp = Enum.reduce(following_list,[], fn (x, acc) ->
@@ -214,10 +220,7 @@ defmodule Proj4.TwitterServer do
             end
         end)
         temp = List.flatten(temp) |> Enum.uniq
-    end
-
-    def handle_call({:get_user_tweets, username},_from,state) do
-        {:reply, get_tweets(username) ,state}
+        temp
     end
 
     def get_tweets(username) do
@@ -263,7 +266,7 @@ defmodule Proj4.TwitterServer do
             [{unsubscriber, password1 , subscribers_list , subscribed_list, tweets_list , onlinestatus}] ->
                 if(onlinestatus == true) do
                     case :ets.lookup(:hashtags, hashtag) do
-                        [{hashtag, tweets_list2}] ->
+                        [{hashtag, _tweets_list2}] ->
                             if Enum.member?(subscribed_list, hashtag) do
                                 :ets.insert(:user, {unsubscriber,  password1 , subscribers_list ,List.delete(subscribed_list,hashtag), tweets_list , onlinestatus})
                                 {:ok, "#{unsubscriber} have successfully unsubscribed to #{hashtag}"}
@@ -279,11 +282,6 @@ defmodule Proj4.TwitterServer do
             [] ->
                 {:error , "There is no subscriber by #{unsubscriber} name"}
         end
-    end
-    
-    def handle_call({:retweet, user}, _from, state) do
-        
-        {:reply, get_tweets(user) ,state}
     end
 
     def add_newuser(userName, password, user_pid) do        

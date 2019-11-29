@@ -19,12 +19,20 @@ defmodule Proj4.TwitterClient do
         IO.inspect state
     end
 
-    def handle_cast({:recieve_tweet}) do
-        # Here the user recieves the tweet from the server process and outputs it onto the screen
+    # def handle_cast({:recieve_tweet}) do
+    #     # Here the user recieves the tweet from the server process and outputs it onto the screen
+    # end
+
+    def get_client_pid_from_username(username) do
+        #Get Twitter server's state
+        server_state = Proj4.TwitterServer.get()
+        clientProcessesMap = Map.get(server_state, :clientProcesses)
+        {:ok, pid_of_user} = Map.fetch(clientProcessesMap, username)
+        pid_of_user
     end
 
     def register_user(username, password, client_pid, server_pid) do 
-        GenServer.call(Proj4.TwitterServer, {:register, username, password, client_pid})
+        GenServer.call(server_pid, {:register, username, password, client_pid})
     end
 
     def login_user(username, password, client_pid, server_pid) do
@@ -51,7 +59,7 @@ defmodule Proj4.TwitterClient do
         GenServer.call(server_pid, {:send_tweet, username, tweet})
     end
 
-    def get_tweets_for_user(username, client_pid, server_pid) do
+    def get_tweets_for_user(username, _client_pid, server_pid) do
         GenServer.call(server_pid, {:get_tweets_for_user, username})
     end
 end
