@@ -226,7 +226,6 @@ defmodule Proj4Test do
     {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
     {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
 
-
     #Register first
     Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
     Proj4.TwitterClient.register_user(user2, pass2, client_pid2, pid)
@@ -285,10 +284,10 @@ defmodule Proj4Test do
     assert {:ok, "Logged in successfully!!"} == Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
 
     #Subscribe
-    IO.inspect Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
+    Proj4.TwitterClient.subscribe_to_user(user1, user2, pid)
 
     #Unsubscribe
-    # assert {:ok, "#{user1} have successfully unsubscribed from #{user2}"} == Proj4.TwitterClient.unsubscribe_from_user(user1, user2, pid)
+    assert {:ok, "#{user1} have successfully unsubscribed from #{user2}"} == Proj4.TwitterClient.unsubscribe_from_user(user1, user2, pid)
   end
 
   test "The user entered to unsubscribe is not registered", %{server: pid} do
@@ -328,5 +327,60 @@ defmodule Proj4Test do
 
     #Unsubscribe
     assert {:error, "#{user1} already unsubscribed from #{user2}"} == Proj4.TwitterClient.unsubscribe_from_user(user1, user2, pid)
+  end
+
+  @doc """
+  5) Send Tweet 
+    i) Error while sending tweet without logging in
+    ii) Not a registered user
+    iii) Correctly send tweet
+  """
+  test "The user is trying to send a tweet without logging in", %{server: pid} do
+    username = "DOS17"
+    password = "Hello"
+    tweet = "Hello World COP 5615"
+
+    #start client 
+    {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+
+    #Register first
+    Proj4.TwitterClient.register_user(username, password, client_pid, pid)
+
+    #Try to send tweet without logging in
+    assert {:error, "Please login first"} == Proj4.TwitterClient.send_tweet(username, tweet, client_pid, pid)
+  end
+
+  test "Try to send a tweet by a client process which is not yet registered", %{server: pid} do
+    username = "DOS18"
+    tweet = "Hello World COP 5615"
+
+    #start client
+    {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+
+    #Try to send tweet without registering
+    assert {:error, "Register first to send the tweets"} == Proj4.TwitterClient.send_tweet(username, tweet, client_pid, pid)
+  end
+
+  test "Correctly send a tweet", %{server: pid} do
+    username = "DOS19"
+    password = "StrongPassword"
+    tweet = "Hello World COP 5615"
+
+    #start client 
+    {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+
+    #Register first
+    Proj4.TwitterClient.register_user(username, password, client_pid, pid)
+
+    #Login User in order to send tweets
+    Proj4.TwitterClient.login_user(username, password, client_pid, pid)
+
+    #Successfully send tweet
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(username, tweet, client_pid, pid)
+
+    [{_ ,_ ,_ ,_ , tweetList, _, _}] = :ets.lookup(:user, username)
+
+    #Successful entry in database table
+    assert Enum.member?(tweetList, tweet) == true
   end
 end
