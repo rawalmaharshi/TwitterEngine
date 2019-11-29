@@ -49,4 +49,7 @@ defmodule Proj4.TwitterClient do
         GenServer.call(server_pid, {:unsubscribe_user, user1, user2})
     end
 
+    def delete_user(username, password, server_pid) do
+        GenServer.call(server_pid, {:delete_account, username, password})
+    end
 end
