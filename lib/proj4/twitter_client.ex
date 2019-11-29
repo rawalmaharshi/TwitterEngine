@@ -48,9 +48,10 @@ defmodule Proj4.TwitterClient do
     end
     
     def send_tweet(username, tweet, _client_pid, server_pid) do
-        # Here the user sends a tweet request to the server process, server will store its tweet in its table
-        # Then the server process will look for this user's subscriber's list; and send another request to all its subsribers to retweet {Those subsribers will actually recieve a tweet first}
         GenServer.call(server_pid, {:send_tweet, username, tweet})
     end
 
+    def get_tweets_for_user(username, client_pid, server_pid) do
+        GenServer.call(server_pid, {:get_tweets_for_user, username})
+    end
 end

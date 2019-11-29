@@ -154,12 +154,11 @@ defmodule Proj4Test do
     assert loginStatus == false
   end
 
-
-  # # @doc """
-  # # 4) Delete User Test
-  # #   i) If user exist then delete
-  # #   ii) else error user doesn't exist
-  # # """
+  @doc """
+  4) Delete User Test
+    i) If user exist then delete
+    ii) else error user doesn't exist
+  """
 
   test "Successfully delete the account", %{server: pid} do
     user1 = "mohit1"
@@ -180,7 +179,7 @@ defmodule Proj4Test do
     Proj4.TwitterClient.register_user(user2, pass2, client_pid2, pid)
     Proj4.TwitterClient.register_user(user3, pass3, client_pid3, pid)
 
-    #Login first user
+    #Login users
     Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
     Proj4.TwitterClient.login_user(user2, pass2, client_pid2, pid)
     Proj4.TwitterClient.login_user(user3, pass3, client_pid3, pid)
@@ -199,15 +198,15 @@ defmodule Proj4Test do
   end
 
   test "Account doesn't exist", %{server: pid} do
-    user1 = "mohit"
-    pass1 = "garg"
+    username = "mohit"
+    password = "garg"
 
-    #start clients 
-    {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    #start client
+    GenServer.start_link(Proj4.TwitterClient, %{name: username})
     
     #deleting the account of the existing user
      
-     assert {:error, "Invalid user.User is not registered"} = Proj4.TwitterClient.delete_user(user1,pass1,pid)
+     assert {:error, "Invalid user. User is not registered"} = Proj4.TwitterClient.delete_user(username,password,pid)
   end
 
   @doc """
@@ -382,5 +381,115 @@ defmodule Proj4Test do
 
     #Successful entry in database table
     assert Enum.member?(tweetList, tweet) == true
+  end
+
+  @doc """
+  6) Hashtags and mentions
+    i) Entry into hashtag table when a tweet consists of a hashtag
+    ii) In user mentions, an entry is done in mentioned user's table
+    iii) Retweet functionality, returns a list of tweets (prompts user to retweet in frontend)
+  """
+
+  test "Enter data into hashtag table that is sent in a tweet", %{server: pid} do
+    username = "DOS20"
+    password = "StrongPassword"
+    tweet = "Hello World #COP #5615"
+  
+    #start client 
+    {_, client_pid} = GenServer.start_link(Proj4.TwitterClient, %{name: username})
+
+    #Register first
+    Proj4.TwitterClient.register_user(username, password, client_pid, pid)
+
+    #Login User in order to send tweets
+    Proj4.TwitterClient.login_user(username, password, client_pid, pid)
+
+    #Successfully send tweet
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(username, tweet, client_pid, pid)
+
+    #check hastag entry in hashtag table, and tweet in every hashtag
+    allhashtags = Regex.scan(~r/#[á-úÁ-Úä-üÄ-Üa-zA-Z0-9_]+/, tweet)
+    Enum.each( allhashtags, fn([hashtag]) -> 
+      assert :ets.member(:hashtags, hashtag) == true 
+      assert :ets.lookup(:hashtags, tweet)
+    end)
+  end
+
+  test "Enter data into user's table when he/she is mentioned in a tweet", %{server: pid} do
+    user1 = "DOS21"
+    pass1 = "StrongPassword1"
+    user2 = "super@user"
+    pass2 = "StrongPassword2"
+
+    tweet = "Hello World. How are you super@user"
+  
+    #start client 
+    {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+
+    #Register first
+    Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
+    Proj4.TwitterClient.register_user(user2, pass2, client_pid2, pid)
+
+    #Login User in order to send tweets
+    Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
+
+    #Successfully send tweet
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(user1, tweet, client_pid1, pid)
+
+    #check hastag entry in hashtag table, and tweet in every hashtag
+    allusernames=  Regex.scan(~r/[á-úÁ-Úä-üÄ-Üa-zA-Z0-9@._]+@user+/, tweet)
+    Enum.each( allusernames, fn([username]) -> 
+      [{_ ,_ ,_ ,_ , tweetList, _, _}] = :ets.lookup(:user, username)
+      #Mentioned user's tweets table adds an entry about tweet which its subscribers can see
+      assert Enum.member?(tweetList, tweet) == true
+    end)
+
+  end
+
+  #Here the user2 is subscribed to the tweets of the first user
+  #On the front end, user2 gets an option to retweet tweets of the users it follows
+  test "Retweets functionality", %{server: pid} do
+    user1 = "DOS22"
+    pass1 = "StrongPassword1"
+    user2 = "DOS23"
+    pass2 = "StrongPassword2"
+    user3 = "DOS24"
+    pass3 = "StrongPassword3"
+
+    tweet1 = "Hello World. How are you?"
+    tweet2 = "World: I am good. What about you?"
+    tweet3 = "This tweet is sent by third user"
+  
+    #start client 
+    {_, client_pid1} = GenServer.start_link(Proj4.TwitterClient, %{name: user1})
+    {_, client_pid2} = GenServer.start_link(Proj4.TwitterClient, %{name: user2})
+    {_, client_pid3} = GenServer.start_link(Proj4.TwitterClient, %{name: user3})
+
+    #Register first
+    Proj4.TwitterClient.register_user(user1, pass1, client_pid1, pid)
+    Proj4.TwitterClient.register_user(user2, pass2, client_pid2, pid)
+    Proj4.TwitterClient.register_user(user3, pass3, client_pid3, pid)
+
+    #Login User in order to send tweets
+    Proj4.TwitterClient.login_user(user1, pass1, client_pid1, pid)
+    Proj4.TwitterClient.login_user(user2, pass2, client_pid2, pid)
+    Proj4.TwitterClient.login_user(user3, pass3, client_pid3, pid)
+    
+    #user 2 subscribes to tweets of user1 and user3
+    Proj4.TwitterClient.subscribe_to_user(user2, user1, pid)
+    Proj4.TwitterClient.subscribe_to_user(user2, user3, pid)
+
+    #Successfully send tweet
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(user1, tweet1, client_pid1, pid)
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(user1, tweet2, client_pid1, pid)
+    assert {:ok, "Tweet sent!"} == Proj4.TwitterClient.send_tweet(user3, tweet3, client_pid3, pid)
+
+    #Now get tweets for user2
+    tweets_for_user2_wall = Proj4.TwitterClient.get_tweets_for_user(user2, client_pid2, pid)
+
+    assert Enum.member?(tweets_for_user2_wall, tweet1) == true
+    assert Enum.member?(tweets_for_user2_wall, tweet2) == true
+    assert Enum.member?(tweets_for_user2_wall, tweet3) == true
   end
 end

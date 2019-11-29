@@ -200,8 +200,12 @@ defmodule Proj4.TwitterServer do
         end
     end
 
-    def handle_call({:get_tweets_for_user, username}, _from ,state) do
-        [{_, _, _, following_list ,_ , _}] = :ets.lookup(:user, username)
+    def handle_call({:get_tweets_for_user, username}, _from ,state) do   
+        {:reply ,get_tweets_for_user_wall(username) , state}
+    end
+
+    def get_tweets_for_user_wall(username) do
+        [{_, _, _, following_list ,_ , _, _}] = :ets.lookup(:user, username)
          temp = Enum.reduce(following_list,[], fn (x, acc) ->
             if Regex.scan(~r/#[á-úÁ-Úä-üÄ-Üa-zA-Z0-9_]+/, x) != [] do
                 [ get_hashtag_posts(x) | acc]
@@ -210,7 +214,6 @@ defmodule Proj4.TwitterServer do
             end
         end)
         temp = List.flatten(temp) |> Enum.uniq
-        {:reply ,temp , state}
     end
 
     def handle_call({:get_user_tweets, username},_from,state) do
@@ -219,7 +222,7 @@ defmodule Proj4.TwitterServer do
 
     def get_tweets(username) do
         case :ets.lookup(:user,username) do
-            [{_, _, _, _ , tweet_list , _}] -> tweet_list
+            [{_, _, _, _ , tweet_list , _, _}] -> tweet_list
             [] -> []
         end
     end
@@ -278,7 +281,8 @@ defmodule Proj4.TwitterServer do
         end
     end
     
-    def handle_call({:retweet,user}, _from, state) do
+    def handle_call({:retweet, user}, _from, state) do
+        
         {:reply, get_tweets(user) ,state}
     end
 
@@ -298,7 +302,7 @@ defmodule Proj4.TwitterServer do
         end
     end
 
-    def authenticate(username, password, client_pid) do
+    def authenticate(username, password, _client_pid) do
         case :ets.lookup(:user, username) do
             [{username, p, s1 , s2, t, onlinestatus, client_pid}] -> 
                 if onlinestatus == false do
