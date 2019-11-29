@@ -84,16 +84,21 @@ defmodule Proj4.TwitterServer do
     end
 
     #work from here
-    def handle_cast({:send_tweet, username, tweet}, state) do
+    def handle_call({:send_tweet, username, tweet}, _from, state) do
         #Add the tweets by the user in the tweets table that looks like
         # UserName, ['hi', 'bye']    --> primary key is username(looked up using that), then there is a list of tweets
+        {:reply, send_tweet(username, tweet), state}
+    end       
+
+    def send_tweet(username, tweet) do
+        message = 1
         case isLoggedin(username) do
             {:ok, status} ->
                 if status do
                     #adding the tweet on the tweeter handle of the user
-                    [{username, password , subscriber , subscribing , tweets_list, onlinestatus}] = :ets.lookup(:user, username)
+                    [{username, password , subscriber , subscribing , tweets_list, onlinestatus, pid}] = :ets.lookup(:user, username)
                     if !Enum.member?(tweets_list, tweet) do
-                        :ets.insert(:user, {username, password , subscriber , subscribing ,[tweet | tweets_list] , onlinestatus})
+                        :ets.insert(:user, {username, password , subscriber , subscribing ,[tweet | tweets_list] , onlinestatus, pid})
                     end
                     #adding the hastags in the hashtable
                     allhashtags = Regex.scan(~r/#[á-úÁ-Úä-üÄ-Üa-zA-Z0-9_]+/, tweet)
@@ -111,23 +116,24 @@ defmodule Proj4.TwitterServer do
                     allusernames=  Regex.scan(~r/[á-úÁ-Úä-üÄ-Üa-zA-Z0-9@._]+@user+/, tweet)
                     Enum.each(allusernames, fn([x]) ->
                         case :ets.lookup(:user, x) do
-                            [{x, password2 , subscriber2 , subscribing2 , tweets_list2, onlinestatus2}] ->
+                            [{x, password2 , subscriber2 , subscribing2 , tweets_list2, onlinestatus2, pid}] ->
                                 if !Enum.member?(tweets_list, tweet) do                
-                                    :ets.insert(:user, {x,  password2 , subscriber2 , subscribing2 ,[tweet | tweets_list2], onlinestatus2})
+                                    :ets.insert(:user, {x,  password2 , subscriber2 , subscribing2 ,[tweet | tweets_list2], onlinestatus2, pid})
                                 end
                             [] -> 
                                 IO.puts "User #{x} doesn't exist. !!!!!You can't tag this user!!!"
                         end
                     end)
-                    IO.puts ("Tweet sent!")
+                    # IO.puts ("Tweet sent!")
+                    message = {:ok, "Tweet sent!"}
                 else
-                    IO.puts "Please login first."
+                    # IO.puts "Please login first."
+                    message = {:error, "Please login first"}
                 end
             {:error, message} ->
-                IO.puts(message)            
+                {:error, message}            
         end
-        {:noreply, state}
-    end       
+    end
 
     def handle_call({:unsubscribe_user, unsubscriber, subscribed_to}, _from, state) do
         {:reply, unsubscribe_user(unsubscriber, subscribed_to), state}
