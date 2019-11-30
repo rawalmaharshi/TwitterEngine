@@ -90,8 +90,8 @@ defmodule Proj4 do
         end)
         IO.puts("Time taken to send randomized tweets according to zipf distribution: " <> to_string(System.monotonic_time(:millisecond) - start_time) <> " milliseconds")
 
-        runType == "stimulate" ->
-          simulate(defaultListOfOperations, user_names, defaultTweets, defaultHashtags, defaultPasswords, server_pid)
+        runType == "simulate" ->
+          simulate(defaultListOfOperations, user_names, defaultTweets, defaultHashtags, defaultPasswords, server_pid, numUsers, numTweets)
           IO.puts("Time taken to complete simulation: " <> to_string(System.monotonic_time(:millisecond) - start_time) <> " milliseconds")
 
         true ->
@@ -100,36 +100,37 @@ defmodule Proj4 do
     end
   end
 
-  defp simulate(defaultListOfOperations, user_names, defaultTweets, defaultHashtags, defaultPasswords, server_pid) do
-    cond do
-      Enum.random(defaultListOfOperations) == "login" ->
-        currentUser = Enum.random(user_names)
-        Proj4.TwitterClient.login_user(currentUser, Enum.random(defaultPasswords), Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
+  defp simulate(defaultListOfOperations, user_names, defaultTweets, defaultHashtags, defaultPasswords, server_pid, numUsers, numTweets) do
+
+    numOfOperations = numUsers * numTweets * 10
+    Enum.each(1..numOfOperations, fn _x -> 
+      cond do
+        Enum.random(defaultListOfOperations) == "login" ->
+          currentUser = Enum.random(user_names)
+          Proj4.TwitterClient.login_user(currentUser, Enum.random(defaultPasswords), Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
+          
+        Enum.random(defaultListOfOperations) == "send_tweets" -> 
+          currentUser = Enum.random(user_names)
+          randomTweetMessage = Enum.random(defaultTweets) <> " " <> Enum.random(defaultHashtags)
+          Proj4.TwitterClient.send_tweet(currentUser, randomTweetMessage, Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
         
-      Enum.random(defaultListOfOperations) == "send_tweets" -> 
-        currentUser = Enum.random(user_names)
-        randomTweetMessage = Enum.random(defaultTweets) <> " " <> Enum.random(defaultHashtags)
-        Proj4.TwitterClient.send_tweet(currentUser, randomTweetMessage, Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
-      
-      Enum.random(defaultListOfOperations) == "subscribe" ->
-        currentUser = Enum.random(user_names)
-        other_user = Enum.random(Enum.filter(user_names, fn u -> u != currentUser end))
-        Proj4.TwitterClient.subscribe_to_user(currentUser, other_user, server_pid)
-      
-      Enum.random(defaultListOfOperations) == "unsubscribe" ->
-        currentUser = Enum.random(user_names)
-        other_user = Enum.random(Enum.filter(user_names, fn u -> u != currentUser end))
-        Proj4.TwitterClient.unsubscribe_from_user(currentUser, other_user, server_pid)
-      
-      Enum.random(defaultListOfOperations) == "logout" ->  
-        currentUser = Enum.random(user_names)
-        Proj4.TwitterClient.logout_user(currentUser, Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
-      
-      true -> 
-        IO.puts "Simulation Complete"
-        System.halt(0)
-    end
-    simulate(defaultListOfOperations, user_names, defaultTweets, defaultHashtags, defaultPasswords, server_pid)
+        Enum.random(defaultListOfOperations) == "subscribe" ->
+          currentUser = Enum.random(user_names)
+          other_user = Enum.random(Enum.filter(user_names, fn u -> u != currentUser end))
+          Proj4.TwitterClient.subscribe_to_user(currentUser, other_user, server_pid)
+        
+        Enum.random(defaultListOfOperations) == "unsubscribe" ->
+          currentUser = Enum.random(user_names)
+          other_user = Enum.random(Enum.filter(user_names, fn u -> u != currentUser end))
+          Proj4.TwitterClient.unsubscribe_from_user(currentUser, other_user, server_pid)
+        
+        Enum.random(defaultListOfOperations) == "logout" ->  
+          currentUser = Enum.random(user_names)
+          Proj4.TwitterClient.logout_user(currentUser, Proj4.TwitterClient.get_client_pid_from_username(currentUser), server_pid)
+        
+        true -> Process.sleep(100)
+      end
+    end)
   end
 
   defp zipf_constant(numUsers) do
