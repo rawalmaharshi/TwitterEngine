@@ -12,7 +12,7 @@ defmodule Proj4Test do
     i) Register successfully
     ii) Duplicate user error
   """
-  test "register user", %{server: pid} do
+  test "Register user", %{server: pid} do
     #table created when server is started
     assert :ets.whereis(:user) != :undefined
 
@@ -30,7 +30,7 @@ defmodule Proj4Test do
     assert :ets.member(:user, username) == true
   end
 
-  test "don't register duplicate user", %{server: pid} do
+  test "Don't register duplicate user", %{server: pid} do
     #add user 
     user1 = "DOSDuplicate"
     password = "COP5615"
@@ -54,7 +54,7 @@ defmodule Proj4Test do
     iv) Already logged in
   """
 
-  test "fail login when user doesn't exist", %{server: pid} do
+  test "Fail user login when user doesn't exist", %{server: pid} do
     username = "DOS@USER2"
     password = "COP5615"
 
@@ -66,7 +66,7 @@ defmodule Proj4Test do
     assert {:error, "User is not registered. Please register the user."} == Proj4.TwitterClient.login_user(username, password, client_pid, pid)
   end
 
-  test "fail login when wrong password is entered", %{server: pid} do
+  test "Fail user login when wrong password is entered", %{server: pid} do
      #add user
      username = "DOS3"
      password = "COP5615"
@@ -80,7 +80,7 @@ defmodule Proj4Test do
      assert {:error, "You have entered a wrong password. Try again!"} == Proj4.TwitterClient.login_user(username, "Wrongpassword", client_pid, pid)
   end
 
-  test "login when correct password is entered", %{server: pid} do
+  test "Login user when correct password is entered", %{server: pid} do
     #add user
     username = "DOS4"
     password = "COP5615"
@@ -98,7 +98,7 @@ defmodule Proj4Test do
     assert loginStatus == true
   end
 
-  test "don't login when already logged in the system", %{server: pid} do
+  test "Don't login when already logged in the system", %{server: pid} do
     #add user
     username = "DOS5"
     password = "COP5615"

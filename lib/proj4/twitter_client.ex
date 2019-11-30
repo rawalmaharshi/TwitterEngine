@@ -59,7 +59,15 @@ defmodule Proj4.TwitterClient do
         GenServer.call(server_pid, {:send_tweet, username, tweet})
     end
 
+    def retweet(username, server_pid) do
+        GenServer.call(server_pid, {:retweet, username})
+    end
+
     def get_tweets_for_user(username, _client_pid, server_pid) do
         GenServer.call(server_pid, {:get_tweets_for_user, username})
+    end
+
+    def get_subsribers_count(username, server_pid) do
+        GenServer.call(server_pid, {:get_subsribers_count, username})
     end
 end
