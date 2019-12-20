@@ -10,16 +10,15 @@ Mohit Garg
 
 ### Instructions to run the project 
 
-To run the project: <br />
-    ```
+To run the project:  
 
-    mix run proj4.exs numUsers numTweets runType 
+```
+mix run proj4.exs numUsers numTweets runType 
 
-    runType can be any of: [normal, zipf, simulate] 
+runType can be any of: [normal, zipf, simulate] 
 
-    e.g: mix run proj4.exs 100 15 zipf  
-
-    ```
+e.g: mix run proj4.exs 100 15 zipf  
+```
 
 To run the test cases:  
 
