@@ -13,11 +13,9 @@ Mohit Garg
 To run the project:  
 
 ```
-mix run proj4.exs numUsers numTweets runType 
+mix run proj4.exs numUsers numTweets
 
-runType can be any of: [normal, zipf, simulate] 
-
-e.g: mix run proj4.exs 100 15 zipf  
+e.g: mix run proj4.exs 100 15 
 ```
 
 To run the test cases:  
@@ -40,11 +38,6 @@ The following functionalities are working:
 - Allow querying tweets subscribed to, tweets with hashtags and mentions 
 
 - Live tweets delivery 
-
-- Tweets sending using Zipf distribution 
-
-- Live connection and disconnection of users 
-
  
 
 ### Implementation details: 
@@ -65,21 +58,7 @@ We have implemented the following functionalities. In twitter engine a user can 
 
 - Re-tweets: In case of an interesting tweet encountered by a user, he/she gets an option to retweet it. 
 
-- Subscribe to hashtag: User can subscribe to any hashtag and get the post related to that hashtag whenever someone post a tweet. They may also unsubscribe. 
-
-## Bonus: 
-
-- Live connection and disconnection for users using logging in and logging out functionality 
-
-- Number of tweets sent by a user follows a Zipf distribution on the number of subscribers. More the number of subscribers, more the number of tweets by the user. 
-
-First, a Zipf constant is calculated using the formula for Zipf constant. The constant is then used to find the number of subscribers for all users depending on their respective indices. 
-
-Then, number of tweets per user is decided by k * Number of Subscribers. 
-
-We have taken k as 2. 
-
- 
+- Subscribe to hashtag: User can subscribe to any hashtag and get the post related to that hashtag whenever someone post a tweet. They may also unsubscribe.  
  
 
 ## Testcases Implemented: 
